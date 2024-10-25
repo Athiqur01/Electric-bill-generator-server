@@ -29,6 +29,8 @@ async function run() {
     // Send a ping to confirm a successful connection
     const subscriberCollection = client.db("ElectricBillGenerator").collection('subescriber');
     const billRateCollection = client.db("ElectricBillGenerator").collection('billRate');
+    const billingDataCollection = client.db("ElectricBillGenerator").collection('billingData');
+    const billCollection = client.db("ElectricBillGenerator").collection('Bill');
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -39,10 +41,31 @@ async function run() {
         const result=subscriberCollection.insertOne(item)
         res.send(result)
       })
+      
+     app.post('/genBill', async(req,res)=>{   // Post Operation to store keeper
+        const item=req.body
+        const result=billCollection.insertOne(item)
+        res.send(result)
+      })
+
      app.post('/billRate', async(req,res)=>{   // Post Operation to store keeper
         const item=req.body
         const result=billRateCollection.insertOne(item)
         res.send(result)
+      })
+
+     app.post('/billingData', async(req,res)=>{   // Post Operation to billingData
+        const {q}=req.query
+        const filter={ billingMonth: new RegExp(q, 'i') }
+        const isBillingMonth= await billingDataCollection.findOne(filter)
+        if(isBillingMonth){
+          return
+        }
+        
+        const item=req.body
+        const result=billingDataCollection.insertOne(item)
+        res.send(result)
+        console.log('date',isBillingMonth)
       })
 
       //get operation----
@@ -50,6 +73,44 @@ async function run() {
         const cursor=await billRateCollection.find().toArray() 
         res.send(cursor)
       })
+
+      app.get('/user', async(req,res)=>{
+        const cursor=await subscriberCollection.find().toArray() 
+        res.send(cursor)
+      })
+
+      app.get('/bill', async(req,res)=>{
+        const cursor=await billingDataCollection.find().toArray() 
+        res.send(cursor)
+      })
+
+      app.get('/billRateFetch', async(req,res)=>{
+        const cursor=await billRateCollection.find().toArray() 
+        res.send(cursor)
+      })
+
+      app.get('/monthly', async(req,res)=>{
+        const id = req.query.q
+        console.log('bill id', id)
+        //const cursor=await billRateCollection.find().toArray() 
+        const result = await billingDataCollection.find({ _id: new ObjectId (id) }).toArray()
+        res.send(result)
+      })
+
+    //   app.get('/monthly', async (req, res) => {
+    //     const id = req.query.q;  // Extracting the 'q' query parameter
+    //     console.log('bill id', id);
+        
+    
+    //     try {
+    //         // Assuming billRateCollection is your MongoDB collection, and you're querying by id
+    //         const result = await billingDataCollection.find({ _id: new ObjectId (id) }).toArray();
+    //         res.send(result);
+    //     } catch (error) {
+    //         console.error('Error fetching data:', error);
+    //         res.status(500).send('Error fetching data');
+    //     }
+    // });
 
       //Patch operation ------------
     app.patch('/billRateupdate', async(req,res)=>{
