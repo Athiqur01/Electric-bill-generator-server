@@ -75,9 +75,25 @@ async function run() {
       })
 
       app.get('/user', async(req,res)=>{
-        const cursor=await subscriberCollection.find().toArray() 
+        const cursor=await subscriberCollection.find().sort({ grade: 1 }).toArray() 
         res.send(cursor)
       })
+
+      app.get('/prevMonth', async (req, res) => {
+  try {
+    const { prevMonth } = req.query;
+    console.log("Requested prevMonth:", prevMonth);
+
+    const cursor = await billingDataCollection
+      .find({ billingMonth: prevMonth })
+      .toArray();
+
+    res.send(cursor);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: "Failed to fetch previous month data" });
+  }
+});
 
       app.get('/bill', async(req,res)=>{
         const cursor=await billingDataCollection.find().toArray() 
@@ -89,6 +105,7 @@ async function run() {
         res.send(cursor)
       })
 
+      
       app.get('/monthly', async(req,res)=>{
         const id = req.query.q
         console.log('bill id', id)
