@@ -79,22 +79,30 @@ async function run() {
         res.send(cursor)
       })
 
-      app.get('/prevMonth', async (req, res) => {
+    app.get('/prevMonth', async (req, res) => {
   try {
-    const { prevMonth } = req.query;
+    const { prevMonth } = req.query; // expects ?prevMonth=2025-10
     console.log("Requested prevMonth:", prevMonth);
 
+    if (!prevMonth) {
+      return res.send([]); // avoid crashing if query is missing
+    }
+
+    // If you want multiple docs for that month:
     const cursor = await billingDataCollection
-      .find({ billingMonth: prevMonth })
-      .toArray();
+      .findOne({ billingMonth: prevMonth })
+      ;
 
     res.send(cursor);
+
+    // If you only want a single doc, use:
+    // const doc = await billingDataCollection.findOne({ billingMonth: prevMonth });
+    // res.send(doc ? [doc] : []);
   } catch (error) {
     console.error(error);
     res.status(500).send({ error: "Failed to fetch previous month data" });
   }
 });
-
       app.get('/bill', async(req,res)=>{
         const cursor=await billingDataCollection.find().toArray() 
         res.send(cursor)
@@ -130,7 +138,7 @@ async function run() {
     // });
 
       //Patch operation ------------
-    app.patch('/billRateupdate', async(req,res)=>{
+      app.patch('/billRateupdate', async(req,res)=>{
       const {q}= req.query
       console.log('idd',q)
       const filter={_id: new ObjectId(q)}
